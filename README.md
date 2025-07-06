@@ -67,6 +67,9 @@ To build the project for production:
 ```bash
 npm run build
 
+#### 5. To Run the Deployment server locally
+npm run dev
+
 
 
 
