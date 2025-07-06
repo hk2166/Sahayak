@@ -1,73 +1,75 @@
-# Welcome to your Lovable project
+# 🙋‍♂️ Sahayak – Your AI-Powered Assistant
 
-## Project info
+**Sahayak** is a lightweight, responsive AI assistant built using **React (Vite)** that integrates with **Google's Gemini API** to answer your questions in real time. It’s your personalized digital helper—whether you're coding, studying, or just curious.
 
-**URL**: https://lovable.dev/projects/9947279c-5ba1-4e4b-a1b3-0ee3f9789271
+---
 
-## How can I edit this code?
+## ✨ Features
 
-There are several ways of editing your application.
+- 🔮 **Gemini API Integration** for intelligent, real-time answers  
+- ⚛️ **React + Vite Stack** for blazing-fast performance  
+- 🧠 Simple and elegant chat interface  
+- 📱 Fully responsive design – works on mobile and desktop  
+- 🧩 Modular and clean codebase – easy to customize  
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9947279c-5ba1-4e4b-a1b3-0ee3f9789271) and start prompting.
+## 🛠️ Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+| Category   | Technology          |
+|------------|---------------------|
+| Frontend   | React (Vite)        |
+| Language   | JavaScript          |
+| AI Engine  | Gemini (Google) API |
+| Tooling    | Vite, npm           |
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 📁 Project Structure
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Sahayak/
+├── public/ # Static assets
+├── src/
+│ ├── assets/ # Icons, images
+│ ├── components/ # Chat UI components
+│ ├── pages/ # App views
+│ ├── App.jsx # Root component
+│ ├── main.jsx # Vite entry point
+├── .env # API Key (not committed)
+├── index.html
+├── package.json
+├── vite.config.js
 
-Follow these steps:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🚀 Getting Started
 
-# Step 3: Install the necessary dependencies.
-npm i
+Follow these steps to run the project locally.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### 1. Clone the Repository
 
-**Edit a file directly in GitHub**
+```bash
+git clone https://github.com/hk2166/Sahayak.git
+cd Sahayak
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 2. Install the Dependencies
+```bash
+npm install
 
-**Use GitHub Codespaces**
+### 3. Make a .env file
+Paste this code inside the .env file :-
+VITE_GEMINI_API_KEY=Your_Gemini_Api_key
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+#### 4. Build & Deploy
+To build the project for production:
 
-## What technologies are used for this project?
+```bash
+npm run build
 
-This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
 
-## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/9947279c-5ba1-4e4b-a1b3-0ee3f9789271) and click on Share -> Publish.
 
-## Can I connect a custom domain to my Lovable project?
 
-Yes, you can!
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
