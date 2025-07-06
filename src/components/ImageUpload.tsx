@@ -106,7 +106,7 @@ export const ImageUpload = () => {
 
   return (
     <div className="space-y-6">
-      <Card className="border-2 border-dashed border-border hover:border-primary transition-smooth">
+      <Card className="border-2 border-dashed border-border hover:border-primary transition-smooth bg-white/10 backdrop-blur-sm">
         <div
           className={`p-8 text-center transition-smooth ${
             isDragOver ? "bg-gradient-subtle border-primary" : ""
@@ -146,12 +146,12 @@ export const ImageUpload = () => {
       </Card>
 
       {uploadedFiles.length > 0 && (
-        <Card className="p-6 shadow-soft">
+        <Card className="p-6 shadow-soft bg-white/10 backdrop-blur-sm">
           <h4 className="text-lg font-semibold text-foreground mb-4">Uploaded Images</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {uploadedFiles.map((uploadedFile) => (
               <div key={uploadedFile.id} className="relative group animate-slide-up">
-                <Card className="overflow-hidden shadow-soft hover:shadow-elevated transition-smooth">
+                <Card className="overflow-hidden shadow-soft hover:shadow-elevated transition-smooth bg-white/10 backdrop-blur-sm">
                   <div className="aspect-video bg-muted relative">
                     <img
                       src={uploadedFile.preview}

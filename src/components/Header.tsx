@@ -1,4 +1,4 @@
-import { GraduationCap, MessageSquare, Upload, Palette } from "lucide-react";
+import { GraduationCap, MessageSquare, Upload, Palette, Scan, Brain } from "lucide-react";
 
 interface HeaderProps {
   activeSection: string;
@@ -9,11 +9,13 @@ export const Header = ({ activeSection, onSectionChange }: HeaderProps) => {
   const sections = [
     { id: 'chat', label: 'AI Assistant', icon: MessageSquare },
     { id: 'upload', label: 'Worksheet Generator', icon: Upload },
+    { id: 'scanner', label: 'Document Scanner', icon: Scan },
     { id: 'visual', label: 'Visual Aids', icon: Palette },
+    { id: 'games', label: 'Games', icon: Brain },
   ];
 
   return (
-    <header className="bg-gradient-subtle border-b border-border shadow-soft">
+    <header className="bg-white/10 backdrop-blur-sm border-b border-border shadow-soft">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-3">

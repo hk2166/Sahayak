@@ -30,7 +30,7 @@ All colors MUST be HSL. Educational theme with calming blues and greens.
     --success-foreground: 0 0% 100%;
 
     --muted: 210 40% 96%;
-    --muted-foreground: 210 10% 40%;
+    --muted-foreground: 0 0% 0%;
 
     --accent: 210 40% 96%;
     --accent-foreground: 210 12% 16%;
@@ -93,7 +93,7 @@ All colors MUST be HSL. Educational theme with calming blues and greens.
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted-foreground: 0 0% 0%;
 
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
@@ -122,5 +122,16 @@ All colors MUST be HSL. Educational theme with calming blues and greens.
 
   body {
     @apply bg-background text-foreground;
+    background-image: url('/background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  html {
+    min-height: 100vh;
   }
 }

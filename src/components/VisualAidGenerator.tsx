@@ -94,7 +94,7 @@ export const VisualAidGenerator = () => {
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 shadow-soft">
+      <Card className="p-6 shadow-soft bg-white/10 backdrop-blur-sm">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-lg bg-gradient-secondary text-secondary-foreground">
             <Lightbulb className="h-6 w-6" />
@@ -252,12 +252,12 @@ export const VisualAidGenerator = () => {
       </Card>
 
       {generatedAids.length > 0 && (
-        <Card className="p-6 shadow-soft">
+        <Card className="p-6 shadow-soft bg-white/10 backdrop-blur-sm">
           <h4 className="text-lg font-semibold text-foreground mb-4">Generated Visual Aids</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {generatedAids.map((aid) => (
               <div key={aid.id} className="animate-slide-up">
-                <Card className="overflow-hidden shadow-soft hover:shadow-elevated transition-smooth group">
+                <Card className="overflow-hidden shadow-soft hover:shadow-elevated transition-smooth group bg-white/10 backdrop-blur-sm">
                   <div className="aspect-video bg-muted relative">
                     <img
                       src={aid.imageUrl}
