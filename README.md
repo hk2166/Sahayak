@@ -60,6 +60,7 @@ npm install
 ### 3. Make a .env file
 Paste this code inside the .env file :-
 VITE_GEMINI_API_KEY=Your_Gemini_Api_key
+VITE_ASSEMBLY_API_KEY=Your_Assembly_api_key
 
 #### 4. Build & Deploy
 To build the project for production:
