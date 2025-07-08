@@ -62,6 +62,119 @@ const languages: Language[] = [
   { code: "ar", name: "Arabic", nativeName: "العربية" }
 ];
 
+// AssemblyAI test integration (for testing only)
+const useAssemblyAIRecorder = (setInputValue: (val: string) => void, setIsTranscribing: (val: boolean) => void) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    setIsRecording(true);
+    audioChunksRef.current = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      mediaRecorder.onstop = async () => {
+        setIsRecording(false);
+        setIsTranscribing(true);
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        // Send to AssemblyAI
+        await sendToAssemblyAI(audioBlob);
+        setIsTranscribing(false);
+      };
+      mediaRecorder.start();
+    } catch (err) {
+      setIsRecording(false);
+      setIsTranscribing(false);
+      alert('Microphone access denied or not available.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  // AssemblyAI upload and transcription
+  const sendToAssemblyAI = async (audioBlob: Blob) => {
+    const apiKey = import.meta.env.VITE_ASSEMBLY_API_KEY;
+    if (!apiKey) {
+      alert('AssemblyAI API key not found in environment variables!');
+      return;
+    }
+    try {
+      // 1. Upload audio file to AssemblyAI
+      const uploadRes = await fetch('https://api.assemblyai.com/v2/upload', {
+        method: 'POST',
+        headers: {
+          'authorization': apiKey
+        },
+        body: audioBlob
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadData.upload_url) {
+        alert('Failed to upload audio to AssemblyAI.');
+        return;
+      }
+      // 2. Request transcription
+      const transcriptRes = await fetch('https://api.assemblyai.com/v2/transcript', {
+        method: 'POST',
+        headers: {
+          'authorization': apiKey,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          audio_url: uploadData.upload_url
+        })
+      });
+      const transcriptData = await transcriptRes.json();
+      if (!transcriptData.id) {
+        alert('Failed to start transcription.');
+        return;
+      }
+      // 3. Poll for completion
+      let completed = false;
+      let text = '';
+      while (!completed) {
+        await new Promise(res => setTimeout(res, 2000));
+        const pollRes = await fetch(`https://api.assemblyai.com/v2/transcript/${transcriptData.id}`, {
+          headers: { 'authorization': apiKey }
+        });
+        const pollData = await pollRes.json();
+        if (pollData.status === 'completed') {
+          completed = true;
+          text = pollData.text;
+        } else if (pollData.status === 'failed') {
+          completed = true;
+          alert('Transcription failed.');
+          console.error('AssemblyAI transcription failed:', pollData);
+          return;
+        }
+      }
+      // Log the result
+      console.log('[AssemblyAI Transcript]:', text);
+      if (text && text.trim().length > 0) {
+        setInputValue(text);
+      } else {
+        console.warn('AssemblyAI returned an empty transcript.');
+      }
+    } catch (err) {
+      setIsTranscribing(false);
+      console.error('AssemblyAI error:', err);
+    }
+  };
+
+  return { isRecording, startRecording, stopRecording };
+};
+
 export const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -73,11 +186,14 @@ export const ChatInterface = () => {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isTTSLoading, setIsTTSLoading] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("hi"); // Default to Hindi
   const [isListening, setIsListening] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const assemblyAI = useAssemblyAIRecorder(setInputValue, setIsTranscribing);
 
   const {
     transcript,
@@ -280,6 +396,40 @@ export const ChatInterface = () => {
       };
 
       setMessages(prev => [...prev, aiResponse]);
+
+      // Lamb AI TTS integration
+      try {
+        setIsTTSLoading(true);
+        const lambApiKey = import.meta.env.VITE_LAMB_AI_API_KEY;
+        if (!lambApiKey) throw new Error('Lamb AI API key not found.');
+        // Example Lamb AI TTS API call (adjust endpoint/body as needed)
+        const ttsRes = await fetch('https://api.lambdalabs.com/tts', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${lambApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ text })
+        });
+        if (!ttsRes.ok) throw new Error('Lamb AI TTS request failed');
+        const ttsData = await ttsRes.json();
+        console.log('Lamb AI TTS response:', ttsData);
+        // Assume ttsData.audio_url or ttsData.audio_base64
+        let audioUrl = ttsData.audio_url;
+        if (!audioUrl && ttsData.audio_base64) {
+          audioUrl = `data:audio/wav;base64,${ttsData.audio_base64}`;
+        }
+        if (audioUrl) {
+          const audio = new Audio(audioUrl);
+          audio.play();
+        } else {
+          throw new Error('No audio URL returned from Lamb AI');
+        }
+      } catch (ttsError) {
+        console.error('Lamb AI TTS error:', ttsError);
+      } finally {
+        setIsTTSLoading(false);
+      }
     } catch (error) {
       console.error("Error calling Gemini API:", error);
       
@@ -442,10 +592,19 @@ export const ChatInterface = () => {
           <Button
             onClick={handleVoiceInput}
             disabled={isLoading}
-            className={`h-8 w-8 p-0 ${isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-gradient-secondary hover:shadow-glow'}`}
+            className={`h-8 w-8 p-0 bg-gradient-secondary hover:shadow-glow transition-shadow duration-300 ${isListening ? 'animate-mic-glow ring-2 ring-red-400 shadow-lg' : ''}`}
             title={browserSupportsSpeechRecognition ? "Click to start voice input" : "Voice input not supported in this browser"}
           >
-            {isListening ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+            {isListening && (
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-0.5 z-0">
+                <span className="w-0.5 h-3 bg-red-400 rounded animate-bar1-mic" />
+                <span className="w-0.5 h-4 bg-red-500 rounded animate-bar2-mic" />
+                <span className="w-0.5 h-5 bg-red-600 rounded animate-bar3-mic" />
+                <span className="w-0.5 h-4 bg-red-500 rounded animate-bar2-mic" />
+                <span className="w-0.5 h-3 bg-red-400 rounded animate-bar1-mic" />
+              </span>
+            )}
+            {isListening ? <MicOff className="h-3 w-3 z-10 relative" /> : <Mic className="h-3 w-3" />}
           </Button>
 
           {/* Screenshot Upload Button */}
@@ -472,6 +631,7 @@ export const ChatInterface = () => {
           >
             <Send className="h-3 w-3" />
           </Button>
+
         </div>
 
         {/* Voice Input Status */}
@@ -496,6 +656,44 @@ export const ChatInterface = () => {
               <Mic className="h-3 w-3 text-yellow-600" />
               <span className="text-xs text-yellow-600">
                 Voice input works best in Chrome, Edge, or Safari. Make sure to allow microphone access.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* AssemblyAI Transcribing Indicator */}
+        {isTranscribing && (
+          <div className="mt-2 p-2 bg-blue-100 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Mic className="h-3 w-3 text-blue-600 animate-pulse" />
+              <span className="text-xs text-blue-600">
+                Transcribing your speech with AssemblyAI...
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* AssemblyAI Speech Recognition Animation */}
+        {assemblyAI.isRecording && (
+          <div className="flex justify-center items-center mt-2 mb-2">
+            {/* Animated bars */}
+            <div className="flex gap-1 h-6">
+              <div className="w-1.5 bg-blue-500 rounded animate-bar1" style={{height: '100%'}}></div>
+              <div className="w-1.5 bg-blue-400 rounded animate-bar2" style={{height: '100%'}}></div>
+              <div className="w-1.5 bg-blue-300 rounded animate-bar3" style={{height: '100%'}}></div>
+              <div className="w-1.5 bg-blue-400 rounded animate-bar2" style={{height: '100%'}}></div>
+              <div className="w-1.5 bg-blue-500 rounded animate-bar1" style={{height: '100%'}}></div>
+            </div>
+            <span className="ml-3 text-xs text-blue-600 animate-pulse">Listening...</span>
+          </div>
+        )}
+
+        {/* Lamb AI TTS Loading Indicator */}
+        {isTTSLoading && (
+          <div className="mt-2 p-2 bg-green-100 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-green-600 animate-pulse">
+                Generating audio response...
               </span>
             </div>
           </div>

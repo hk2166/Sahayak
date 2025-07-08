@@ -40,3 +40,61 @@
 .read-the-docs {
   color: #888;
 }
+
+@keyframes bar1 {
+  0%, 100% { height: 40%; }
+  50% { height: 100%; }
+}
+@keyframes bar2 {
+  0%, 100% { height: 80%; }
+  50% { height: 30%; }
+}
+@keyframes bar3 {
+  0%, 100% { height: 60%; }
+  50% { height: 90%; }
+}
+
+.animate-bar1 {
+  animation: bar1 1s infinite ease-in-out;
+}
+.animate-bar2 {
+  animation: bar2 1s infinite ease-in-out;
+}
+.animate-bar3 {
+}
+
+@keyframes mic-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7), 0 0 0 2px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.2), 0 0 0 4px rgba(239, 68, 68, 0.4);
+  }
+}
+
+.animate-mic-glow {
+  animation: mic-glow 1.2s infinite;
+}
+
+@keyframes bar1-mic {
+  0%, 100% { height: 40%; }
+  50% { height: 100%; }
+}
+@keyframes bar2-mic {
+  0%, 100% { height: 80%; }
+  50% { height: 30%; }
+}
+@keyframes bar3-mic {
+  0%, 100% { height: 60%; }
+  50% { height: 90%; }
+}
+
+.animate-bar1-mic {
+  animation: bar1-mic 0.9s infinite ease-in-out;
+}
+.animate-bar2-mic {
+  animation: bar2-mic 0.9s infinite ease-in-out;
+}
+.animate-bar3-mic {
+  animation: bar3-mic 0.9s infinite ease-in-out;
+}
