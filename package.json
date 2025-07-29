@@ -1,8 +1,20 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "ls",
+  "version": "0.0.1",
   "private": true,
-  "version": "0.0.0",
+  "description": "**Sahayak** is a lightweight, responsive AI assistant built using **React (Vite)** that integrates with **Google's Gemini API** to answer your questions in real time. It’s your personalized digital helper—whether you're coding, studying, or just curious.",
+  "homepage": "https://github.com/hk2166/Sahayak#readme",
+  "bugs": {
+    "url": "https://github.com/hk2166/Sahayak/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hk2166/Sahayak.git"
+  },
+  "license": "ISC",
+  "author": "",
   "type": "module",
+  "main": "eslint.config.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
