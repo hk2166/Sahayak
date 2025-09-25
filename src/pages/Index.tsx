@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ChatInterface } from "@/components/ChatInterface";
-import { ImageUpload } from "@/components/ImageUpload";
 import { DocumentScanner } from "@/components/DocumentScanner";
 import { VisualAidGenerator } from "@/components/VisualAidGenerator";
 import QuizGame from "@/components/QuizGame";
@@ -10,18 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles, Brain, Zap } from "lucide-react";
 
 const Index = () => {
-  const [activeSection, setActiveSection] = useState("chat");
-
+  const [activeSection, setActiveSection] = useState("visual");
+  
   const renderContent = () => {
     switch (activeSection) {
       case 'chat':
         return <ChatInterface />;
-      case 'upload':
-        return <ImageUpload />;
       case 'scanner':
         return <DocumentScanner />;
-      case 'visual':
-        return <VisualAidGenerator />;
       case 'games':
         return <QuizGame onClose={() => setActiveSection('chat')} />;
       default:

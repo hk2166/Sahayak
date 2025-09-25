@@ -1,4 +1,4 @@
-import { GraduationCap, MessageSquare, Upload, Palette, Scan, Brain } from "lucide-react";
+import { GraduationCap, MessageSquare, Scan, Brain } from "lucide-react";
 
 interface HeaderProps {
   activeSection: string;
@@ -8,9 +8,7 @@ interface HeaderProps {
 export const Header = ({ activeSection, onSectionChange }: HeaderProps) => {
   const sections = [
     { id: 'chat', label: 'AI Assistant', icon: MessageSquare },
-    { id: 'upload', label: 'Worksheet Generator', icon: Upload },
     { id: 'scanner', label: 'Document Scanner', icon: Scan },
-    { id: 'visual', label: 'Visual Aids', icon: Palette },
     { id: 'games', label: 'Games', icon: Brain },
   ];
 

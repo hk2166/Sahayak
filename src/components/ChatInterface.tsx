@@ -8,11 +8,32 @@ import { Send, Bot, User, Globe, Mic, MicOff, Camera, Image as ImageIcon } from 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
-// Type declarations for SpeechRecognition API
+// Type declarations for SpeechRecognition API (minimal)
+type TSpeechRecognition = {
+  start: () => void;
+  stop: () => void;
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onstart?: () => void;
+  onresult?: (event: TSpeechRecognitionEvent) => void;
+  onerror?: (event: TSpeechRecognitionErrorEvent) => void;
+  onend?: () => void;
+};
+
+type TSpeechRecognitionConstructor = new () => TSpeechRecognition;
+
+// Minimal event types
+type TSpeechRecognitionAlternative = { transcript: string };
+type TSpeechRecognitionResult = { isFinal: boolean; 0: TSpeechRecognitionAlternative };
+type TSpeechRecognitionResultList = { length: number; [index: number]: TSpeechRecognitionResult };
+type TSpeechRecognitionEvent = { resultIndex: number; results: TSpeechRecognitionResultList };
+type TSpeechRecognitionErrorEvent = { error: string };
+
 declare global {
   interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
+    SpeechRecognition: TSpeechRecognitionConstructor | undefined;
+    webkitSpeechRecognition: TSpeechRecognitionConstructor | undefined;
   }
 }
 
@@ -32,6 +53,7 @@ interface Language {
 
 const languages: Language[] = [
   { code: "hi", name: "Hindi", nativeName: "हिंदी" },
+  { code: "en", name: "English", nativeName: "English" },
   { code: "bn", name: "Bengali", nativeName: "বাংলা" },
   { code: "te", name: "Telugu", nativeName: "తెలుగు" },
   { code: "mr", name: "Marathi", nativeName: "मराठी" },
@@ -45,11 +67,6 @@ const languages: Language[] = [
   { code: "sa", name: "Sanskrit", nativeName: "संस्कृतम्" },
   { code: "ur", name: "Urdu", nativeName: "اردو" },
   { code: "ne", name: "Nepali", nativeName: "नेपाली" },
-  { code: "si", name: "Sinhala", nativeName: "සිංහල" },
-  { code: "my", name: "Manipuri", nativeName: "মৈতৈলোন্" },
-  { code: "ks", name: "Kashmiri", nativeName: "कॉशुर" },
-  { code: "sd", name: "Sindhi", nativeName: "سنڌي" },
-  { code: "en", name: "English", nativeName: "English" },
   { code: "es", name: "Spanish", nativeName: "Español" },
   { code: "fr", name: "French", nativeName: "Français" },
   { code: "de", name: "German", nativeName: "Deutsch" },
@@ -62,6 +79,38 @@ const languages: Language[] = [
   { code: "ar", name: "Arabic", nativeName: "العربية" }
 ];
 
+// Map selected language code to BCP-47 locale for speech recognition
+const getLocaleForLanguage = (code: string): string => {
+  const map: Record<string, string> = {
+    hi: 'hi-IN',
+    en: 'en-US',
+    bn: 'bn-IN',
+    te: 'te-IN',
+    mr: 'mr-IN',
+    ta: 'ta-IN',
+    gu: 'gu-IN',
+    kn: 'kn-IN',
+    ml: 'ml-IN',
+    pa: 'pa-IN',
+    or: 'or-IN',
+    as: 'as-IN',
+    sa: 'sa-IN',
+    ur: 'ur-IN',
+    ne: 'ne-NP',
+    es: 'es-ES',
+    fr: 'fr-FR',
+    de: 'de-DE',
+    it: 'it-IT',
+    pt: 'pt-PT',
+    ru: 'ru-RU',
+    ja: 'ja-JP',
+    ko: 'ko-KR',
+    zh: 'zh-CN',
+    ar: 'ar-SA',
+  };
+  return map[code] || 'en-US';
+};
+
 // AssemblyAI test integration (for testing only)
 const useAssemblyAIRecorder = (setInputValue: (val: string) => void, setIsTranscribing: (val: boolean) => void) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -69,6 +118,11 @@ const useAssemblyAIRecorder = (setInputValue: (val: string) => void, setIsTransc
   const audioChunksRef = useRef<Blob[]>([]);
 
   const startRecording = async () => {
+    // Guard: MediaRecorder support check
+    if (typeof MediaRecorder === 'undefined') {
+      alert('Voice recording is not supported in this browser. Try Chrome on desktop.');
+      return;
+    }
     setIsRecording(true);
     audioChunksRef.current = [];
     try {
@@ -194,6 +248,7 @@ export const ChatInterface = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const assemblyAI = useAssemblyAIRecorder(setInputValue, setIsTranscribing);
+  const fallbackRecognitionRef = useRef<TSpeechRecognition | null>(null);
 
   const {
     transcript,
@@ -229,19 +284,21 @@ export const ChatInterface = () => {
 
   const startFallbackSpeechRecognition = () => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      const SR = (window.SpeechRecognition || window.webkitSpeechRecognition);
+      if (!SR) return;
+      const recognition = new SR();
       
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = getLocaleForLanguage(selectedLanguage);
 
       recognition.onstart = () => {
         setIsListening(true);
         setIsUsingFallback(true);
+        fallbackRecognitionRef.current = recognition;
       };
 
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: TSpeechRecognitionEvent) => {
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
           if (event.results[i].isFinal) {
@@ -253,7 +310,7 @@ export const ChatInterface = () => {
         }
       };
 
-      recognition.onerror = (event) => {
+      recognition.onerror = (event: TSpeechRecognitionErrorEvent) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
         setIsUsingFallback(false);
@@ -265,6 +322,7 @@ export const ChatInterface = () => {
       recognition.onend = () => {
         setIsListening(false);
         setIsUsingFallback(false);
+        fallbackRecognitionRef.current = null;
       };
 
       recognition.start();
@@ -274,13 +332,13 @@ export const ChatInterface = () => {
   const handleVoiceInput = () => {
     if (isListening) {
       if (isUsingFallback) {
-        // Stop fallback recognition
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-          // We can't directly stop it, but it will stop when we set isListening to false
-          setIsListening(false);
-          setIsUsingFallback(false);
+        // Stop fallback recognition reliably
+        if (fallbackRecognitionRef.current) {
+          try { fallbackRecognitionRef.current.stop(); }
+          catch (e) { console.warn('Failed to stop fallback recognition:', e); }
         }
+        setIsListening(false);
+        setIsUsingFallback(false);
       } else {
         SpeechRecognition.stopListening();
         setIsListening(false);
@@ -296,7 +354,7 @@ export const ChatInterface = () => {
           setIsUsingFallback(false);
           SpeechRecognition.startListening({ 
             continuous: true, 
-            language: 'en-US',
+            language: getLocaleForLanguage(selectedLanguage),
             interimResults: true
           });
         })
@@ -307,7 +365,11 @@ export const ChatInterface = () => {
         });
     } else {
       // Use fallback method
-      startFallbackSpeechRecognition();
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        startFallbackSpeechRecognition();
+      } else {
+        alert('Voice input is not supported in this browser. Please try Chrome or Edge on desktop.');
+      }
     }
   };
 
