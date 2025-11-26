@@ -413,29 +413,28 @@ export const ChatInterface = () => {
 
       // Initialize Google AI
       const genAI = new GoogleGenerativeAI(geminiApiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
       console.log("Making API call to Gemini...");
-      
+
       // Create prompt with language instruction
       const languageInstruction = getLanguageInstruction(selectedLanguage);
       let prompt = `${languageInstruction}\n\nUser question: ${inputValue || "Please analyze this image and provide insights."}`;
-      
+
       let result;
-      
+
       if (uploadedImage) {
         // If there's an image, use the multimodal model
-        const multimodalModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        
+        const multimodalModel = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+
         // Convert base64 to Uint8Array for image processing
         const base64Data = uploadedImage.split(',')[1];
-        const imageData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-        
+
         result = await multimodalModel.generateContent([
           prompt,
           {
             inlineData: {
-              data: btoa(String.fromCharCode(...imageData)),
+              data: base64Data,
               mimeType: "image/jpeg"
             }
           }
