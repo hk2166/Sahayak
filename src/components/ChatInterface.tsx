@@ -3,10 +3,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, Bot, User, Globe, Mic, MicOff, Camera, Image as ImageIcon } from "lucide-react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Send,
+  Bot,
+  User,
+  Globe,
+  Mic,
+  MicOff,
+  Camera,
+  Image as ImageIcon,
+} from "lucide-react";
+import { GoogleGenAI } from "@google/genai";
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
 
 // Type declarations for SpeechRecognition API (minimal)
 type TSpeechRecognition = {
@@ -25,9 +42,18 @@ type TSpeechRecognitionConstructor = new () => TSpeechRecognition;
 
 // Minimal event types
 type TSpeechRecognitionAlternative = { transcript: string };
-type TSpeechRecognitionResult = { isFinal: boolean; 0: TSpeechRecognitionAlternative };
-type TSpeechRecognitionResultList = { length: number; [index: number]: TSpeechRecognitionResult };
-type TSpeechRecognitionEvent = { resultIndex: number; results: TSpeechRecognitionResultList };
+type TSpeechRecognitionResult = {
+  isFinal: boolean;
+  0: TSpeechRecognitionAlternative;
+};
+type TSpeechRecognitionResultList = {
+  length: number;
+  [index: number]: TSpeechRecognitionResult;
+};
+type TSpeechRecognitionEvent = {
+  resultIndex: number;
+  results: TSpeechRecognitionResultList;
+};
 type TSpeechRecognitionErrorEvent = { error: string };
 
 declare global {
@@ -76,51 +102,56 @@ const languages: Language[] = [
   { code: "ja", name: "Japanese", nativeName: "日本語" },
   { code: "ko", name: "Korean", nativeName: "한국어" },
   { code: "zh", name: "Chinese", nativeName: "中文" },
-  { code: "ar", name: "Arabic", nativeName: "العربية" }
+  { code: "ar", name: "Arabic", nativeName: "العربية" },
 ];
 
 // Map selected language code to BCP-47 locale for speech recognition
 const getLocaleForLanguage = (code: string): string => {
   const map: Record<string, string> = {
-    hi: 'hi-IN',
-    en: 'en-US',
-    bn: 'bn-IN',
-    te: 'te-IN',
-    mr: 'mr-IN',
-    ta: 'ta-IN',
-    gu: 'gu-IN',
-    kn: 'kn-IN',
-    ml: 'ml-IN',
-    pa: 'pa-IN',
-    or: 'or-IN',
-    as: 'as-IN',
-    sa: 'sa-IN',
-    ur: 'ur-IN',
-    ne: 'ne-NP',
-    es: 'es-ES',
-    fr: 'fr-FR',
-    de: 'de-DE',
-    it: 'it-IT',
-    pt: 'pt-PT',
-    ru: 'ru-RU',
-    ja: 'ja-JP',
-    ko: 'ko-KR',
-    zh: 'zh-CN',
-    ar: 'ar-SA',
+    hi: "hi-IN",
+    en: "en-US",
+    bn: "bn-IN",
+    te: "te-IN",
+    mr: "mr-IN",
+    ta: "ta-IN",
+    gu: "gu-IN",
+    kn: "kn-IN",
+    ml: "ml-IN",
+    pa: "pa-IN",
+    or: "or-IN",
+    as: "as-IN",
+    sa: "sa-IN",
+    ur: "ur-IN",
+    ne: "ne-NP",
+    es: "es-ES",
+    fr: "fr-FR",
+    de: "de-DE",
+    it: "it-IT",
+    pt: "pt-PT",
+    ru: "ru-RU",
+    ja: "ja-JP",
+    ko: "ko-KR",
+    zh: "zh-CN",
+    ar: "ar-SA",
   };
-  return map[code] || 'en-US';
+  return map[code] || "en-US";
 };
 
 // AssemblyAI test integration (for testing only)
-const useAssemblyAIRecorder = (setInputValue: (val: string) => void, setIsTranscribing: (val: boolean) => void) => {
+const useAssemblyAIRecorder = (
+  setInputValue: (val: string) => void,
+  setIsTranscribing: (val: boolean) => void
+) => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
   const startRecording = async () => {
     // Guard: MediaRecorder support check
-    if (typeof MediaRecorder === 'undefined') {
-      alert('Voice recording is not supported in this browser. Try Chrome on desktop.');
+    if (typeof MediaRecorder === "undefined") {
+      alert(
+        "Voice recording is not supported in this browser. Try Chrome on desktop."
+      );
       return;
     }
     setIsRecording(true);
@@ -137,7 +168,9 @@ const useAssemblyAIRecorder = (setInputValue: (val: string) => void, setIsTransc
       mediaRecorder.onstop = async () => {
         setIsRecording(false);
         setIsTranscribing(true);
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
         // Send to AssemblyAI
         await sendToAssemblyAI(audioBlob);
         setIsTranscribing(false);
@@ -146,14 +179,16 @@ const useAssemblyAIRecorder = (setInputValue: (val: string) => void, setIsTransc
     } catch (err) {
       setIsRecording(false);
       setIsTranscribing(false);
-      alert('Microphone access denied or not available.');
+      alert("Microphone access denied or not available.");
     }
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current.stream
+        .getTracks()
+        .forEach((track) => track.stop());
     }
   };
 
@@ -161,68 +196,74 @@ const useAssemblyAIRecorder = (setInputValue: (val: string) => void, setIsTransc
   const sendToAssemblyAI = async (audioBlob: Blob) => {
     const apiKey = import.meta.env.VITE_ASSEMBLY_API_KEY;
     if (!apiKey) {
-      alert('AssemblyAI API key not found in environment variables!');
+      alert("AssemblyAI API key not found in environment variables!");
       return;
     }
     try {
       // 1. Upload audio file to AssemblyAI
-      const uploadRes = await fetch('https://api.assemblyai.com/v2/upload', {
-        method: 'POST',
+      const uploadRes = await fetch("https://api.assemblyai.com/v2/upload", {
+        method: "POST",
         headers: {
-          'authorization': apiKey
+          authorization: apiKey,
         },
-        body: audioBlob
+        body: audioBlob,
       });
       const uploadData = await uploadRes.json();
       if (!uploadData.upload_url) {
-        alert('Failed to upload audio to AssemblyAI.');
+        alert("Failed to upload audio to AssemblyAI.");
         return;
       }
       // 2. Request transcription
-      const transcriptRes = await fetch('https://api.assemblyai.com/v2/transcript', {
-        method: 'POST',
-        headers: {
-          'authorization': apiKey,
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          audio_url: uploadData.upload_url
-        })
-      });
+      const transcriptRes = await fetch(
+        "https://api.assemblyai.com/v2/transcript",
+        {
+          method: "POST",
+          headers: {
+            authorization: apiKey,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            audio_url: uploadData.upload_url,
+          }),
+        }
+      );
       const transcriptData = await transcriptRes.json();
       if (!transcriptData.id) {
-        alert('Failed to start transcription.');
+        alert("Failed to start transcription.");
         return;
       }
       // 3. Poll for completion
       let completed = false;
-      let text = '';
+      let text = "";
       while (!completed) {
-        await new Promise(res => setTimeout(res, 2000));
-        const pollRes = await fetch(`https://api.assemblyai.com/v2/transcript/${transcriptData.id}`, {
-          headers: { 'authorization': apiKey }
-        });
+        await new Promise((res) => setTimeout(res, 2000));
+        const pollRes = await fetch(
+          `https://api.assemblyai.com/v2/transcript/${transcriptData.id}`,
+          {
+            headers: { authorization: apiKey },
+          }
+        );
         const pollData = await pollRes.json();
-        if (pollData.status === 'completed') {
+        if (pollData.status === "completed") {
           completed = true;
           text = pollData.text;
-        } else if (pollData.status === 'failed') {
+        } else if (pollData.status === "failed") {
           completed = true;
-          alert('Transcription failed.');
-          console.error('AssemblyAI transcription failed:', pollData);
+          alert("Transcription failed.");
+          console.error("AssemblyAI transcription failed:", pollData);
           return;
         }
       }
       // Log the result
-      console.log('[AssemblyAI Transcript]:', text);
+      console.log("[AssemblyAI Transcript]:", text);
       if (text && text.trim().length > 0) {
         setInputValue(text);
       } else {
-        console.warn('AssemblyAI returned an empty transcript.');
+        console.warn("AssemblyAI returned an empty transcript.");
       }
     } catch (err) {
       setIsTranscribing(false);
-      console.error('AssemblyAI error:', err);
+      console.error("AssemblyAI error:", err);
     }
   };
 
@@ -233,10 +274,11 @@ export const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "नमस्ते! मैं आपका AI सीखने का सहायक हूं। अपनी पढ़ाई के बारे में कुछ भी पूछें या सहायता के लिए सामग्री अपलोड करें!",
+      content:
+        "नमस्ते! मैं आपका AI सीखने का सहायक हूं। अपनी पढ़ाई के बारे में कुछ भी पूछें या सहायता के लिए सामग्री अपलोड करें!",
       isUser: false,
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    },
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -254,7 +296,7 @@ export const ChatInterface = () => {
     transcript,
     listening,
     resetTranscript,
-    browserSupportsSpeechRecognition
+    browserSupportsSpeechRecognition,
   } = useSpeechRecognition();
 
   // Fallback speech recognition
@@ -283,11 +325,11 @@ export const ChatInterface = () => {
   }, [fallbackTranscript, isListening]);
 
   const startFallbackSpeechRecognition = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SR = (window.SpeechRecognition || window.webkitSpeechRecognition);
+    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) return;
       const recognition = new SR();
-      
+
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = getLocaleForLanguage(selectedLanguage);
@@ -299,7 +341,7 @@ export const ChatInterface = () => {
       };
 
       recognition.onresult = (event: TSpeechRecognitionEvent) => {
-        let finalTranscript = '';
+        let finalTranscript = "";
         for (let i = event.resultIndex; i < event.results.length; i++) {
           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
@@ -311,11 +353,13 @@ export const ChatInterface = () => {
       };
 
       recognition.onerror = (event: TSpeechRecognitionErrorEvent) => {
-        console.error('Speech recognition error:', event.error);
+        console.error("Speech recognition error:", event.error);
         setIsListening(false);
         setIsUsingFallback(false);
-        if (event.error === 'not-allowed') {
-          alert("Microphone access denied. Please allow microphone access in your browser settings.");
+        if (event.error === "not-allowed") {
+          alert(
+            "Microphone access denied. Please allow microphone access in your browser settings."
+          );
         }
       };
 
@@ -334,8 +378,11 @@ export const ChatInterface = () => {
       if (isUsingFallback) {
         // Stop fallback recognition reliably
         if (fallbackRecognitionRef.current) {
-          try { fallbackRecognitionRef.current.stop(); }
-          catch (e) { console.warn('Failed to stop fallback recognition:', e); }
+          try {
+            fallbackRecognitionRef.current.stop();
+          } catch (e) {
+            console.warn("Failed to stop fallback recognition:", e);
+          }
         }
         setIsListening(false);
         setIsUsingFallback(false);
@@ -348,14 +395,15 @@ export const ChatInterface = () => {
 
     // Try the react-speech-recognition first
     if (browserSupportsSpeechRecognition) {
-      navigator.mediaDevices.getUserMedia({ audio: true })
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
         .then(() => {
           setIsListening(true);
           setIsUsingFallback(false);
-          SpeechRecognition.startListening({ 
-            continuous: true, 
+          SpeechRecognition.startListening({
+            continuous: true,
             language: getLocaleForLanguage(selectedLanguage),
-            interimResults: true
+            interimResults: true,
           });
         })
         .catch((error) => {
@@ -365,17 +413,22 @@ export const ChatInterface = () => {
         });
     } else {
       // Use fallback method
-      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      if (
+        "webkitSpeechRecognition" in window ||
+        "SpeechRecognition" in window
+      ) {
         startFallbackSpeechRecognition();
       } else {
-        alert('Voice input is not supported in this browser. Please try Chrome or Edge on desktop.');
+        alert(
+          "Voice input is not supported in this browser. Please try Chrome or Edge on desktop."
+        );
       }
     }
   };
 
   const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+    if (file && file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onload = (e) => {
         setUploadedImage(e.target?.result as string);
@@ -392,89 +445,77 @@ export const ChatInterface = () => {
       content: inputValue || "Analyze this image",
       isUser: true,
       timestamp: new Date(),
-      imageUrl: uploadedImage || undefined
+      imageUrl: uploadedImage || undefined,
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setUploadedImage(null);
     setIsLoading(true);
 
     try {
-      // Get Gemini API key from environment variable
       const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      
-      console.log("API Key exists:", !!geminiApiKey);
-      console.log("API Key length:", geminiApiKey?.length);
-      
       if (!geminiApiKey) {
-        throw new Error("Gemini API key not found. Please check your .env file.");
+        throw new Error("Gemini API key not found. Check .env file.");
       }
 
-      // Initialize Google AI
-      const genAI = new GoogleGenerativeAI(geminiApiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
-      console.log("Making API call to Gemini...");
+      // capture text BEFORE clearing it
+      const userPrompt = inputValue || "Please analyze this image.";
 
-      // Create prompt with language instruction
-      const languageInstruction = getLanguageInstruction(selectedLanguage);
-      let prompt = `${languageInstruction}\n\nUser question: ${inputValue || "Please analyze this image and provide insights."}`;
-
-      let result;
+      const parts: any[] = [
+        {
+          text: `${getLanguageInstruction(
+            selectedLanguage
+          )}\n\nUser: ${userPrompt}`,
+        },
+      ];
 
       if (uploadedImage) {
-        // If there's an image, use the multimodal model
-        const multimodalModel = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
-
-        // Convert base64 to Uint8Array for image processing
-        const base64Data = uploadedImage.split(',')[1];
-
-        result = await multimodalModel.generateContent([
-          prompt,
-          {
-            inlineData: {
-              data: base64Data,
-              mimeType: "image/jpeg"
-            }
-          }
-        ]);
-      } else {
-        // Text-only request
-        result = await model.generateContent(prompt);
+        const base64Data = uploadedImage.split(",")[1];
+        parts.push({
+          inlineData: {
+            data: base64Data,
+            mimeType: "image/jpeg",
+          },
+        });
       }
-      
-      const response = await result.response;
-      const text = response.text();
 
-      console.log("API response received:", text.substring(0, 100) + "...");
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: parts,
+      });
+      const text = response.text;
+
+      console.log("API response:", text.substring(0, 80) + "...");
 
       const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
+        id: crypto.randomUUID(),
         content: text,
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages((prev) => [...prev, aiResponse]);
 
       // Lamb AI TTS integration
       try {
         setIsTTSLoading(true);
         const lambApiKey = import.meta.env.VITE_LAMB_AI_API_KEY;
-        if (!lambApiKey) throw new Error('Lamb AI API key not found.');
+        if (!lambApiKey) throw new Error("Lamb AI API key not found.");
         // Example Lamb AI TTS API call (adjust endpoint/body as needed)
-        const ttsRes = await fetch('https://api.lambdalabs.com/tts', {
-          method: 'POST',
+        const ttsRes = await fetch("https://api.lambdalabs.com/tts", {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${lambApiKey}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${lambApiKey}`,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({ text })
+          body: JSON.stringify({ text }),
         });
-        if (!ttsRes.ok) throw new Error('Lamb AI TTS request failed');
+        if (!ttsRes.ok) throw new Error("Lamb AI TTS request failed");
         const ttsData = await ttsRes.json();
-        console.log('Lamb AI TTS response:', ttsData);
+        console.log("Lamb AI TTS response:", ttsData);
         // Assume ttsData.audio_url or ttsData.audio_base64
         let audioUrl = ttsData.audio_url;
         if (!audioUrl && ttsData.audio_base64) {
@@ -484,38 +525,41 @@ export const ChatInterface = () => {
           const audio = new Audio(audioUrl);
           audio.play();
         } else {
-          throw new Error('No audio URL returned from Lamb AI');
+          throw new Error("No audio URL returned from Lamb AI");
         }
       } catch (ttsError) {
-        console.error('Lamb AI TTS error:', ttsError);
+        console.error("Lamb AI TTS error:", ttsError);
       } finally {
         setIsTTSLoading(false);
       }
     } catch (error) {
       console.error("Error calling Gemini API:", error);
-      
-      let errorMessage = "Sorry, I encountered an error while processing your request.";
-      
+
+      let errorMessage =
+        "Sorry, I encountered an error while processing your request.";
+
       if (error instanceof Error) {
         if (error.message.includes("API key")) {
           errorMessage = "API key error: " + error.message;
         } else if (error.message.includes("quota")) {
-          errorMessage = "API quota exceeded. Please check your Gemini API usage.";
+          errorMessage =
+            "API quota exceeded. Please check your Gemini API usage.";
         } else if (error.message.includes("network")) {
-          errorMessage = "Network error. Please check your internet connection.";
+          errorMessage =
+            "Network error. Please check your internet connection.";
         } else {
           errorMessage = "Error: " + error.message;
         }
       }
-      
+
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
         content: errorMessage,
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, errorResponse]);
+      setMessages((prev) => [...prev, errorResponse]);
     } finally {
       setIsLoading(false);
     }
@@ -529,9 +573,9 @@ export const ChatInterface = () => {
   };
 
   const getLanguageInstruction = (languageCode: string) => {
-    const language = languages.find(lang => lang.code === languageCode);
+    const language = languages.find((lang) => lang.code === languageCode);
     if (!language) return "";
-    
+
     return `Please respond in ${language.name} (${language.nativeName}). If the user asks in a different language, still respond in ${language.name}.`;
   };
 
@@ -543,10 +587,13 @@ export const ChatInterface = () => {
             <Bot className="h-4 w-4 text-primary" />
             AI Learning Assistant
           </h3>
-          
+
           <div className="flex items-center gap-2">
             <Globe className="h-3 w-3 text-muted-foreground" />
-            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+            <Select
+              value={selectedLanguage}
+              onValueChange={setSelectedLanguage}
+            >
               <SelectTrigger className="w-[120px] h-7 text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -555,7 +602,9 @@ export const ChatInterface = () => {
                   <SelectItem key={language.code} value={language.code}>
                     <div className="flex items-center gap-2">
                       <span>{language.nativeName}</span>
-                      <span className="text-muted-foreground text-xs">({language.name})</span>
+                      <span className="text-muted-foreground text-xs">
+                        ({language.name})
+                      </span>
                     </div>
                   </SelectItem>
                 ))}
@@ -563,13 +612,15 @@ export const ChatInterface = () => {
             </Select>
           </div>
         </div>
-        
+
         <ScrollArea ref={scrollRef} className="flex-1 pr-3">
           <div className="space-y-3">
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.isUser ? "justify-end" : "justify-start"} animate-slide-up`}
+                className={`flex ${
+                  message.isUser ? "justify-end" : "justify-start"
+                } animate-slide-up`}
               >
                 <div
                   className={`max-w-[85%] rounded-xl px-3 py-2 ${
@@ -579,23 +630,36 @@ export const ChatInterface = () => {
                   }`}
                 >
                   <div className="flex items-start gap-2">
-                    {!message.isUser && <Bot className="h-3 w-3 mt-0.5 text-primary flex-shrink-0" />}
-                    {message.isUser && <User className="h-3 w-3 mt-0.5 text-primary-foreground flex-shrink-0" />}
+                    {!message.isUser && (
+                      <Bot className="h-3 w-3 mt-0.5 text-primary flex-shrink-0" />
+                    )}
+                    {message.isUser && (
+                      <User className="h-3 w-3 mt-0.5 text-primary-foreground flex-shrink-0" />
+                    )}
                     <div className="text-xs leading-relaxed">
                       {message.content}
                       {message.imageUrl && (
                         <div className="mt-2">
-                          <img 
-                            src={message.imageUrl} 
-                            alt="Uploaded image" 
+                          <img
+                            src={message.imageUrl}
+                            alt="Uploaded image"
                             className="max-w-full h-auto rounded-lg max-h-32 object-cover"
                           />
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className={`text-xs mt-1 opacity-70 ${message.isUser ? "text-primary-foreground" : "text-muted-foreground"}`}>
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div
+                    className={`text-xs mt-1 opacity-70 ${
+                      message.isUser
+                        ? "text-primary-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {message.timestamp.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </div>
                 </div>
               </div>
@@ -607,8 +671,14 @@ export const ChatInterface = () => {
                     <Bot className="h-3 w-3 text-primary" />
                     <div className="flex space-x-1">
                       <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"></div>
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                      <div
+                        className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
                     </div>
                   </div>
                 </div>
@@ -621,7 +691,9 @@ export const ChatInterface = () => {
         {uploadedImage && (
           <div className="mb-2 p-2 bg-muted rounded-lg">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-muted-foreground">Image to analyze:</span>
+              <span className="text-xs text-muted-foreground">
+                Image to analyze:
+              </span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -631,9 +703,9 @@ export const ChatInterface = () => {
                 ×
               </Button>
             </div>
-            <img 
-              src={uploadedImage} 
-              alt="Preview" 
+            <img
+              src={uploadedImage}
+              alt="Preview"
               className="max-w-full h-auto rounded max-h-16 object-cover"
             />
           </div>
@@ -648,13 +720,21 @@ export const ChatInterface = () => {
             className="flex-1 border-border focus:ring-primary transition-smooth text-xs h-8"
             disabled={isLoading}
           />
-          
+
           {/* Voice Input Button */}
           <Button
             onClick={handleVoiceInput}
             disabled={isLoading}
-            className={`h-8 w-8 p-0 bg-gradient-secondary hover:shadow-glow transition-shadow duration-300 ${isListening ? 'animate-mic-glow ring-2 ring-red-400 shadow-lg' : ''}`}
-            title={browserSupportsSpeechRecognition ? "Click to start voice input" : "Voice input not supported in this browser"}
+            className={`h-8 w-8 p-0 bg-gradient-secondary hover:shadow-glow transition-shadow duration-300 ${
+              isListening
+                ? "animate-mic-glow ring-2 ring-red-400 shadow-lg"
+                : ""
+            }`}
+            title={
+              browserSupportsSpeechRecognition
+                ? "Click to start voice input"
+                : "Voice input not supported in this browser"
+            }
           >
             {isListening && (
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-0.5 z-0">
@@ -665,7 +745,11 @@ export const ChatInterface = () => {
                 <span className="w-0.5 h-3 bg-red-400 rounded animate-bar1-mic" />
               </span>
             )}
-            {isListening ? <MicOff className="h-3 w-3 z-10 relative" /> : <Mic className="h-3 w-3" />}
+            {isListening ? (
+              <MicOff className="h-3 w-3 z-10 relative" />
+            ) : (
+              <Mic className="h-3 w-3" />
+            )}
           </Button>
 
           {/* Screenshot Upload Button */}
@@ -692,7 +776,6 @@ export const ChatInterface = () => {
           >
             <Send className="h-3 w-3" />
           </Button>
-
         </div>
 
         {/* Voice Input Status */}
@@ -701,7 +784,9 @@ export const ChatInterface = () => {
             <div className="flex items-center gap-2">
               <Mic className="h-3 w-3 text-red-600 animate-pulse" />
               <span className="text-xs text-red-600">
-                {isUsingFallback ? "Listening (fallback mode)..." : "Listening... Speak now"}
+                {isUsingFallback
+                  ? "Listening (fallback mode)..."
+                  : "Listening... Speak now"}
               </span>
             </div>
             <div className="text-xs text-red-500 mt-1">
@@ -716,7 +801,8 @@ export const ChatInterface = () => {
             <div className="flex items-center gap-2">
               <Mic className="h-3 w-3 text-yellow-600" />
               <span className="text-xs text-yellow-600">
-                Voice input works best in Chrome, Edge, or Safari. Make sure to allow microphone access.
+                Voice input works best in Chrome, Edge, or Safari. Make sure to
+                allow microphone access.
               </span>
             </div>
           </div>
@@ -739,13 +825,30 @@ export const ChatInterface = () => {
           <div className="flex justify-center items-center mt-2 mb-2">
             {/* Animated bars */}
             <div className="flex gap-1 h-6">
-              <div className="w-1.5 bg-blue-500 rounded animate-bar1" style={{height: '100%'}}></div>
-              <div className="w-1.5 bg-blue-400 rounded animate-bar2" style={{height: '100%'}}></div>
-              <div className="w-1.5 bg-blue-300 rounded animate-bar3" style={{height: '100%'}}></div>
-              <div className="w-1.5 bg-blue-400 rounded animate-bar2" style={{height: '100%'}}></div>
-              <div className="w-1.5 bg-blue-500 rounded animate-bar1" style={{height: '100%'}}></div>
+              <div
+                className="w-1.5 bg-blue-500 rounded animate-bar1"
+                style={{ height: "100%" }}
+              ></div>
+              <div
+                className="w-1.5 bg-blue-400 rounded animate-bar2"
+                style={{ height: "100%" }}
+              ></div>
+              <div
+                className="w-1.5 bg-blue-300 rounded animate-bar3"
+                style={{ height: "100%" }}
+              ></div>
+              <div
+                className="w-1.5 bg-blue-400 rounded animate-bar2"
+                style={{ height: "100%" }}
+              ></div>
+              <div
+                className="w-1.5 bg-blue-500 rounded animate-bar1"
+                style={{ height: "100%" }}
+              ></div>
             </div>
-            <span className="ml-3 text-xs text-blue-600 animate-pulse">Listening...</span>
+            <span className="ml-3 text-xs text-blue-600 animate-pulse">
+              Listening...
+            </span>
           </div>
         )}
 

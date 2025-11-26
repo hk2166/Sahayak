@@ -67,7 +67,7 @@ const QuizGame: React.FC<QuizGameProps> = ({ onClose }) => {
 
       // Initialize Google AI
       const genAI = new GoogleGenerativeAI(geminiApiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
       const prompt = `Generate a unique and engaging quiz about "${topic}" for children. Create exactly 10 multiple-choice questions with 4 options each. Make it fun, educational, and age-appropriate.
 
