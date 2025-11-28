@@ -500,38 +500,38 @@ export const ChatInterface = () => {
       setMessages((prev) => [...prev, aiResponse]);
 
       // Lamb AI TTS integration
-      try {
-        setIsTTSLoading(true);
-        const lambApiKey = import.meta.env.VITE_LAMB_AI_API_KEY;
-        if (!lambApiKey) throw new Error("Lamb AI API key not found.");
-        // Example Lamb AI TTS API call (adjust endpoint/body as needed)
-        const ttsRes = await fetch("https://api.lambdalabs.com/tts", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${lambApiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ text }),
-        });
-        if (!ttsRes.ok) throw new Error("Lamb AI TTS request failed");
-        const ttsData = await ttsRes.json();
-        console.log("Lamb AI TTS response:", ttsData);
-        // Assume ttsData.audio_url or ttsData.audio_base64
-        let audioUrl = ttsData.audio_url;
-        if (!audioUrl && ttsData.audio_base64) {
-          audioUrl = `data:audio/wav;base64,${ttsData.audio_base64}`;
-        }
-        if (audioUrl) {
-          const audio = new Audio(audioUrl);
-          audio.play();
-        } else {
-          throw new Error("No audio URL returned from Lamb AI");
-        }
-      } catch (ttsError) {
-        console.error("Lamb AI TTS error:", ttsError);
-      } finally {
-        setIsTTSLoading(false);
-      }
+      // try {
+      //   setIsTTSLoading(true);
+      //   const lambApiKey = import.meta.env.VITE_LAMB_AI_API_KEY;
+      //   if (!lambApiKey) throw new Error("Lamb AI API key not found.");
+      //   // Example Lamb AI TTS API call (adjust endpoint/body as needed)
+      //   const ttsRes = await fetch("https://api.lambdalabs.com/tts", {
+      //     method: "POST",
+      //     headers: {
+      //       Authorization: `Bearer ${lambApiKey}`,
+      //       "Content-Type": "application/json",
+      //     },
+      //     body: JSON.stringify({ text }),
+      //   });
+      //   if (!ttsRes.ok) throw new Error("Lamb AI TTS request failed");
+      //   const ttsData = await ttsRes.json();
+      //   console.log("Lamb AI TTS response:", ttsData);
+      //   // Assume ttsData.audio_url or ttsData.audio_base64
+      //   let audioUrl = ttsData.audio_url;
+      //   if (!audioUrl && ttsData.audio_base64) {
+      //     audioUrl = `data:audio/wav;base64,${ttsData.audio_base64}`;
+      //   }
+      //   if (audioUrl) {
+      //     const audio = new Audio(audioUrl);
+      //     audio.play();
+      //   } else {
+      //     throw new Error("No audio URL returned from Lamb AI");
+      //   }
+      // } catch (ttsError) {
+      //   console.error("Lamb AI TTS error:", ttsError);
+      // } finally {
+      //   setIsTTSLoading(false);
+      // }
     } catch (error) {
       console.error("Error calling Gemini API:", error);
 
